@@ -1,0 +1,159 @@
+;Rodrigo Leonel Guerra Cifuentes 201404011 Electronica 5 Practica 2
+T_Giro EQU 3000000 ;Tiempo de giro (16000000/8)(Tiempo)
+
+T_Recto EQU 4000000 ;Tiempo en linea recta
+	
+T_OFF EQU 	4000000 ;TIEMPO DE ESPERA APAGADO
+	
+
+;-------------------Define el uso de instrucciones THUMB-----------
+		THUMB
+;-----------Define area para datos de 4 bytes---------------
+		AREA 	DATA, ALIGN=4 
+;-----------Declarar Variables -------------------------
+;----------Define área de codigo, con capacidad de ser importado C---------
+		AREA	|.text|, CODE, READONLY, ALIGN=2
+;----------Declara la instrucción Start como Global-----------			
+		EXPORT	Start
+;----------------------Codigo------------------------------------
+
+
+Start   
+
+CLK		LDR R1, =0X400FE608 ;Activacion del clock en el puerto F y puerto E
+		LDR R0 , [R1]
+		ORR R0, #0X30 ;110000
+		STR R0, [R1]
+		NOP
+		NOP
+		NOP
+;--------------DIRECCIONES BASE DE LOS PUERTOS A UTILIZAR 
+		LDR R1, =0x40025000	;DIRECCION BASE PUERTO F
+		LDR R2, =0x40024000	;DIRECCION BASE PUERTO E
+;---------DESACTIVAR FUNCIONES ANALOGICAS AMSE
+		;OFFSET REGISTRO AMSEL F
+		LDR R0, [R1,#0X528]	
+		BIC R0, #0XFF
+		STR R0, [R1,#0X528]
+		;OFFSET REGISTRO AMSEL E
+		LDR R3, [R2,#0X528] 
+		BIC R3, #0X10  ;00010000 PE4     
+		STR R3, [R2,#0X528]
+;--------ASIGNAR ENTRADAS Y SALIDAS, DIR---
+		;Puerto F
+		LDR R0, [R1, #0X400]
+		ORR R0, #0XFF	
+		STR R0, [R1,#0X400]
+		;Puerto B
+		LDR R3, [R2, #0X400]
+		ORR R3, #0X10 ;00010000 PE4
+		STR R3, [R2,#0X400]
+;-----ASIGNAR FUNCION ALTERNATIVA,PCTL (GPI0 = 0)
+		;Puerto F
+		MOV R0, #0		 ; 0 EN ESTE REGISTRO REPRESENTA GPIO
+		STR R0, [R1, #0X52C]
+		;Puerto E
+		MOV R3, #0				
+		STR R3, [R2, #0X52C]
+;-----DESABILITAR FUNCION ALTERNATIVA, AFSEL
+		;Puerto F
+		LDR R0, [R1, #0X420]
+		BIC R0, #0XFF		;Cambia todo el valor del registro AFSEL al 0 para utilizar el pin como GPIO
+		STR R0, [R1, #0X420]
+		;Puerto E
+		LDR R3, [R2, #0X420]
+		BIC R3, #0X10
+		STR R3, [R2, #0X420]
+;-------HABILITAR FUNCIONES DIGITALES, DEN
+		;Puerto F
+		LDR R0, [R1, #0X51C]
+		ORR R0, #0X0E		;HABILITA LOS PINES 1,2,3 puerto F (0000 1110 = 0X0E)
+		STR R0, [R1, #0X51C]
+		;Puerto E
+		LDR R3, [R2, #0X51C]
+		ORR R3, #0X10		;HABILITA EL PIN 4 EN EL PUERTO E  (0001 0000 = 0X10)
+		STR R3, [R2, #0X51C]
+;Conteo de ciclos para hacer el delay
+		LDR R5, =T_Giro
+	
+		LDR R8, =T_Recto
+		
+		LDR R6, =T_OFF
+		
+		
+
+;-------RUTINA CUADRADO---------
+RECTO
+		LDR R4, =0
+		LDR R9, =0
+		LDR R7, =0
+		
+		LDR R3, [R2, #0X3FC]	;OFFSET AL REGISTRO DE DATA DE TODOS LOS PINES DE UN PUERTO
+		ORR R3, #0X10			;PRENDE PE4
+		STR R3, [R2, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y PRENDE LOS PINES 
+		
+		LDR R0, [R1, #0X3FC]	;OFFSET AL REGISTRO DE DATA DE TODOS LOS PINES DE UN PUERTO
+		ORR R0, #0X2 			;PRENDE PF2
+		STR R0, [R1, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y ENCIENDE LOS PINES
+		B DELAY_R
+		
+DELAY_R			
+		ADD R9, #1
+		CMP R9, R8
+		BEQ APAGADO
+		B DELAY_R
+
+APAGADO
+		LDR R3, [R2, #0X3FC]	;OFFSET AL REGISTRO DE DATA DE TODOS LOS PINES DE UN PUERTO
+		BIC R3, #0X10			;APAGA PE4
+		STR R3, [R2, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y Apaga los pines
+		
+		LDR R0, [R1, #0X3FC]	;OFFSET AL REGISTRO DE DATA DE TODOS LOS PINES DE UN PUERTO
+		BIC R0, #0X2 			;APAGA PF2
+		STR R0, [R1, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y ENCIENDE LOS PINES
+		B DELAY_OFF
+
+
+DELAY_OFF
+
+		ADD R7, #1
+		CMP R7, R6
+		BEQ GIRO
+		B DELAY_OFF	
+
+
+GIRO
+		LDR R3, [R2, #0X3FC]	;OFFSET AL REGISTRO DE DATA DE TODOS LOS PINES DE UN PUERTO
+		ORR R3, #0X10			;PRENDE PE4
+		STR R3, [R2, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y Prende los pines
+		B DELAY_G
+		
+DELAY_G			
+		
+		ADD R4, #1
+		CMP R4, R5
+		BEQ APAGADO_2
+		B DELAY_G
+
+
+
+APAGADO_2
+		
+		LDR R7, =0 
+		
+		LDR R3, [R2, #0X3FC]	;OFFSET AL REGISTRO DE DATA DE TODOS LOS PINES DE UN PUERTO
+		BIC R3, #0X10			;Apaga los pines del puerto E
+		STR R3, [R2, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y Apaga los pines
+		B DELAY_OFF2
+
+DELAY_OFF2	
+		
+		ADD R7, #1
+		CMP R7, R6
+		BEQ RECTO
+		B DELAY_OFF2
+		
+
+
+		ALIGN      
+		END

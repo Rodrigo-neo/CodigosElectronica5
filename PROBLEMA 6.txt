@@ -1,0 +1,66 @@
+;Rodrigo Leonel Guerra Cifuentes 201404011
+ AREA |.text|, CODE, READONLY, ALIGN=2
+		EXPORT Start
+		ALIGN
+
+Start
+      B Asignacion
+	  
+Asignacion
+;------------------Variables------------------------
+		LDR R1,=98 ;PORCENTAJE DE RITMO CARDIACO
+		B Comparacion
+
+Comparacion
+	    CMP R1,#50
+		BCS PRIMER
+		B LOOP 
+PRIMER
+	  CMP R1,#61
+	  BCC P_1
+	  BHI SEGUNDO
+SEGUNDO
+	  CMP R1,#71
+	  BCC P_2
+	  BHI TERCERO
+TERCERO
+	  CMP R1,#81
+	  BCC P_3
+	  BHI CUARTO
+CUARTO
+	  CMP R1,#91
+	  BCC P_4
+	  BHI P_5
+P_1	
+	  LDR R2,=1
+	  B LOOP
+P_2   
+	  LDR R2,=2
+	  B LOOP
+P_3   
+	  LDR R2,=3
+	  B LOOP
+P_4
+	 LDR R2,=4
+	 B LOOP
+P_5  
+	 LDR R2,=5
+	 B LOOP
+	 
+	
+				
+	
+;Ciclo infinito
+
+	
+LOOP
+; R1 Es la variable a ingresar por el usuario que en este caso es su % de ritmo cardiaco que oscila entre 50 y 100
+;El resultado de la zona de trabajo en la que la persona se encuentra se despliega en el registro 2
+; SI R2= 1 , Entrenamiento aeróbico de nivel inicial; reduce el estrés
+; SI R2= 2 , Entrenamiento cardiovascular básico; buen ritmo de recuperación
+; SI R2= 3 , Capacidad aeróbica mejorada; entrenamiento cardiovascular óptimo
+; SI R2= 4 , Mejor capacidad y umbral anaeróbicos; mejor velocidad
+; SI R2= 5 , Resistencia anaeróbica y muscular; mayor potencia
+		B LOOP
+	 	ALIGN
+		END

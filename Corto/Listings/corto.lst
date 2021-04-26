@@ -1,0 +1,194 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ; El programa consiste en ensender la luz blanca al mant
+                       ener
+    2 00000000         ; presionado el boton de PF4
+    3 00000000         
+    4 00000000         ;-------------------Define el uso de instrucciones THUMB
+                       -----------
+    5 00000000                 THUMB
+    6 00000000         ;-----------Define area para datos de 4 bytes-----------
+                       ----
+    7 00000000                 AREA             DATA, ALIGN=4
+    8 00000000         ;-----------Declarar Variables -------------------------
+                       
+    9 00000000 00 00 00 
+              00       resultado
+                               SPACE            4
+   10 00000004         ;----------Define área de codigo, con capacidad de ser i
+                       mportado C---------
+   11 00000004                 AREA             |.text|, CODE, READONLY, ALIGN=
+2
+   12 00000000         ;----------Declara la instrucción Start como Global-----
+                       ------   
+   13 00000000                 EXPORT           Start
+   14 00000000         ;----------------------Codigo---------------------------
+                       ---------
+   15 00000000         
+   16 00000000         
+   17 00000000         Start
+   18 00000000         ;---------Habilitar el reloj en perifericos---------
+   19 00000000 491F    Int_PF  LDR              R1, =0X400FE608
+   20 00000002 6808            LDR              R0 , [R1]
+   21 00000004 F040 0020       ORR              R0, #0X20   ; cambiar 0x02 a 0x
+                                                            20 porque 0x02 acti
+                                                            va el reloj del pue
+                                                            rto B
+   22 00000008 6008            STR              R0, [R1]
+   23 0000000A BF00            NOP
+   24 0000000C BF00            NOP
+   25 0000000E BF00            NOP
+   26 00000010         ;---------DESACTIVAR FUNCIONES ANALOGICAS AMSEL   
+   27 00000010 491C            LDR              R1, =0X40025000 ; DIRECCION BAS
+                                                            E PUERTO F
+   28 00000012 F8D1 0528       LDR              R0, [R1,#0X528]
+   29 00000016 F020 00FF       BIC              R0, #0XFF
+   30 0000001A F8C1 0528       STR              R0, [R1,#0X528]
+   31 0000001E         ;--------ASIGNAR ENTRADAS Y SALIDAS, DIR---
+   32 0000001E F8D1 0400       LDR              R0, [R1, #0X400]
+   33 00000022 F040 000E       ORR              R0, #0X0E   ; 
+   34 00000026 F8C1 0400       STR              R0, [R1,#0X400]
+   35 0000002A         ;-----ASIGNAR FUNCION ALTERNATIVA,PCTL (GPI0 = 0)
+   36 0000002A F04F 0000       MOV              R0, #0
+   37 0000002E F8C1 052C       STR              R0, [R1, #0X52C]
+   38 00000032         ;-----DESABILITAR FUNCION ALTERNATIVA, AFSEL
+   39 00000032 F8D1 0420       LDR              R0, [R1, #0X420]
+   40 00000036 F020 00FF       BIC              R0, #0XFF
+   41 0000003A F8C1 0420       STR              R0, [R1, #0X420]
+   42 0000003E         ;-------HABILITAR FUNCIONES DIGITALES, DEN
+   43 0000003E F8D1 051C       LDR              R0, [R1, #0X51C]
+   44 00000042 F040 001E       ORR              R0, #0X1E   ;cambiar el 0x1A po
+                                                            r 0x1E porque quere
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+                                                            mos habilitar los p
+                                                            ines 1,2,3,4 que en
+                                                             binario es 11110 =
+                                                             0x1E
+   45 00000046 F8C1 051C       STR              R0, [R1, #0X51C]
+   46 0000004A         ;-------HABILITAR RESISTENCIA PULL UP, PUR
+   47 0000004A F8D1 0510       LDR              R0, [R1, #0X510]
+   48 0000004E F040 0010       ORR              R0, #0X10
+   49 00000052 F8C1 0510       STR              R0, [R1, #0X510]
+   50 00000056         
+   51 00000056         ;-------Main---------
+   52 00000056         
+   53 00000056         
+   54 00000056 490B            LDR              R1, =0X40025000 ; DIRECCION BAS
+                                                            E PUERTO F
+   55 00000058 F8D1 03FC 
+                       LEER    LDR              R0, [R1, #0X3FC]
+   56 0000005C F000 0010       AND              R0,#0X10
+   57 00000060 2810            CMP              R0 , #0X10
+   58 00000062 D106            BNE              LED_ON
+   59 00000064         
+   60 00000064 F8D1 03FC 
+                       LED_OFF LDR              R0, [R1, #0X3FC]
+   61 00000068 F020 000E       BIC              R0, #0X0E
+   62 0000006C F8C1 03FC       STR              R0, [R1, #0X3FC]
+   63 00000070 E7F2            B                LEER
+   64 00000072         
+   65 00000072 F8D1 03FC 
+                       LED_ON  LDR              R0, [R1, #0X3FC]
+   66 00000076 F040 000E       ORR              R0, #0X0E
+   67 0000007A F8C1 03FC       STR              R0, [R1, #0X3FC]
+   68 0000007E E7EB            B                LEER
+   69 00000080         
+   70 00000080                 ALIGN
+   71 00000080                 END
+              400FE608 
+              40025000 
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
+erwork --depend=.\objects\corto.d -o.\objects\corto.o -I.\RTE\_Target_1 -IC:\Us
+ers\Rodrigo\AppData\Local\Arm\Packs\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C123 
+-ID:\ARM-Keil\ARM\CMSIS\Include --predefine="__EVAL SETA 1" --predefine="__UVIS
+ION_VERSION SETA 528" --predefine="TM4C123GH6PM SETA 1" --list=.\listings\corto
+.lst Corto.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+DATA 00000000
+
+Symbol: DATA
+   Definitions
+      At line 7 in file Corto.s
+   Uses
+      None
+Comment: DATA unused
+resultado 00000000
+
+Symbol: resultado
+   Definitions
+      At line 9 in file Corto.s
+   Uses
+      None
+Comment: resultado unused
+2 symbols
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.text 00000000
+
+Symbol: .text
+   Definitions
+      At line 11 in file Corto.s
+   Uses
+      None
+Comment: .text unused
+Int_PF 00000000
+
+Symbol: Int_PF
+   Definitions
+      At line 19 in file Corto.s
+   Uses
+      None
+Comment: Int_PF unused
+LED_OFF 00000064
+
+Symbol: LED_OFF
+   Definitions
+      At line 60 in file Corto.s
+   Uses
+      None
+Comment: LED_OFF unused
+LED_ON 00000072
+
+Symbol: LED_ON
+   Definitions
+      At line 65 in file Corto.s
+   Uses
+      At line 58 in file Corto.s
+Comment: LED_ON used once
+LEER 00000058
+
+Symbol: LEER
+   Definitions
+      At line 55 in file Corto.s
+   Uses
+      At line 63 in file Corto.s
+      At line 68 in file Corto.s
+
+Start 00000000
+
+Symbol: Start
+   Definitions
+      At line 17 in file Corto.s
+   Uses
+      At line 13 in file Corto.s
+Comment: Start used once
+6 symbols
+344 symbols in table

@@ -1,0 +1,156 @@
+;Rodrigo Leonel Guerra Cifuentes 201404011 Electronica 5 Practica 2
+Delay EQU 2000000 ;Tiempo de giro (16000000/8)(Tiempo)
+
+
+	
+
+;-------------------Define el uso de instrucciones THUMB-----------
+		THUMB
+;-----------Define area para datos de 4 bytes---------------
+		AREA 	DATA, ALIGN=4 
+;-----------Declarar Variables -------------------------
+;----------Define área de codigo, con capacidad de ser importado C---------
+		AREA	|.text|, CODE, READONLY, ALIGN=2
+;----------Declara la instrucción Start como Global-----------			
+		EXPORT	Start
+;----------------------Codigo------------------------------------
+
+
+Start   
+
+CLK		LDR R1, =0X400FE608 ;Activacion del clock en el puerto F 
+		LDR R0 , [R1]
+		ORR R0, #0X30 ;100000 ;FEDCBA
+		STR R0, [R1]
+		NOP
+		NOP
+		NOP
+;--------------DIRECCIONES BASE DE LOS PUERTOS A UTILIZAR 
+		LDR R1, =0x40025000	;DIRECCION BASE PUERTO F
+;---------DESACTIVAR FUNCIONES ANALOGICAS AMSE
+		;OFFSET REGISTRO AMSEL F
+		LDR R0, [R1,#0X528]	
+		BIC R0, #0X0E ;Prendiendo pines 123
+		STR R0, [R1,#0X528]
+;--------ASIGNAR ENTRADAS Y SALIDAS, DIR---
+		;Puerto F
+		LDR R0, [R1, #0X400]
+		ORR R0, #0X0E ;SALIDAS PINES 123	
+		STR R0, [R1,#0X400]
+		
+;-----ASIGNAR FUNCION ALTERNATIVA,PCTL (GPI0 = 0)
+		;Puerto F
+		MOV R0, #0		 ; 0 EN ESTE REGISTRO REPRESENTA GPIO
+		STR R0, [R1, #0X52C]
+;-----DESABILITAR FUNCION ALTERNATIVA, AFSEL
+		;Puerto F
+		LDR R0, [R1, #0X420]
+		BIC R0, #0XFF		;Cambia todo el valor del registro AFSEL al 0 para utilizar el pin como GPIO
+		STR R0, [R1, #0X420]
+;-------HABILITAR FUNCIONES DIGITALES, DEN
+		;Puerto F
+		LDR R0, [R1, #0X51C]
+		ORR R0, #0X0E		;HABILITA LOS PINES 1,2,3 puerto F (0000 1110 = 0X0E)
+		STR R0, [R1, #0X51C]
+		;Puerto E
+;Conteo de ciclos para hacer el delay
+		LDR R5, =Delay
+	
+		
+
+;-------RUTINA CUADRADO---------
+Reset
+	LDR R2,=0 ; Vol
+	LDR R4, =0
+	LDR R0, [R1, #0X3FC]	;OFFSET AL REGISTRO DE DATA DE TODOS LOS PINES DE UN PUERTO
+	BIC R0, #0XFF 			
+	STR R0, [R1, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y ENCIENDE LOS PINES
+	B DELAY
+		
+DELAY	;0		
+		ADD R4, #1
+		CMP R4, R5
+		BEQ Cambio1
+		B DELAY
+
+Cambio1
+		LDR R4,=0 
+		LDR R0, =0X02
+		STR R0, [R1, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y ENCIENDE LOS PINES
+		B DELAY1
+DELAY1		;1	
+		ADD R4, #1
+		CMP R4, R5
+		BEQ Cambio2
+		B DELAY1
+Cambio2
+		LDR R4,=0 
+		LDR R0, =0X04
+		STR R0, [R1, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y ENCIENDE LOS PINES
+		B DELAY2
+DELAY2			;2
+		ADD R4, #1
+		CMP R4, R5
+		BEQ Cambio3
+		B DELAY2	
+
+Cambio3
+		LDR R4,=0 
+		LDR R0, =0X06
+		STR R0, [R1, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y ENCIENDE LOS PINES
+		B DELAY3
+DELAY3			
+		ADD R4, #1
+		CMP R4, R5
+		BEQ Cambio4
+		B DELAY3
+Cambio4	
+		LDR R4,=0 
+		LDR R0, =0X08
+		STR R0, [R1, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y ENCIENDE LOS PINES
+		B DELAY4
+DELAY4		;1	
+		ADD R4, #1
+		CMP R4, R5
+		BEQ Cambio5
+		B DELAY4
+		
+Cambio5
+		LDR R4,=0 
+		LDR R0, =0X0A
+		STR R0, [R1, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y ENCIENDE LOS PINES
+		B DELAY5
+DELAY5		;1	
+		ADD R4, #1
+		CMP R4, R5
+		BEQ Cambio6
+		B DELAY5
+
+Cambio6	
+		LDR R4,=0 
+		LDR R0, =0X0C
+		STR R0, [R1, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y ENCIENDE LOS PINES
+		B DELAY6
+DELAY6		;1	
+		ADD R4, #1
+		CMP R4, R5
+		BEQ Cambio7
+		B DELAY6
+		
+		
+		
+Cambio7
+		LDR R4,=0 
+		LDR R0, =0X0E
+		STR R0, [R1, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y ENCIENDE LOS PINES
+		B DELAY7
+DELAY7		;1	
+		ADD R4, #1
+		CMP R4, R5
+		BEQ Reset
+		B DELAY7		
+		
+
+
+		ALIGN      
+		END

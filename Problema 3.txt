@@ -1,0 +1,100 @@
+;Rodrigo Leonel Guerra Cifuentes 201404011
+ AREA |.text|, CODE, READONLY, ALIGN=2
+		EXPORT Start
+		ALIGN
+
+Start
+      B comparacion
+	  
+comparacion 
+;------------------Variables------------------------
+		LDR R4,=2 ;Operaciones si es 1 se toman los dos catetos y se calcula la hipotenusa, si es 2 se toma el angulo y se calcula el angulo resante 180-R7-90=X y el seno del angulo en R7
+		VLDR.F32 S5,=3; Cateto 1 
+		VLDR.F32 S13,=4; Cateto 2
+		
+		LDR R7,=3; Angulo 
+		LDR R9,=90 ;SUMA DE ANGULOS 
+		
+		CMP R4,#1 ;
+		BEQ CATETO
+		CMP R4,#2 
+		BEQ ANGULO
+
+CATETO
+	  VMUL.F32 S4,S5,S5 ;CATETO 1 AL CUADRADO
+	  VMUL.F32 S6,S13,S13 ;CATETO 2 AL CUADRADO
+	  VADD.F32 S14,S13,S5
+	  VSQRT.F32 S14,S14 ;RAIZ CUADRADA PARA HIPOTENUSA
+	  B LOOP 
+ANGULO
+	 SUB R8,R9,R7;  Angulo 
+	 B Seno 
+				
+				
+Seno	
+	LDR R0,=0; Valor inicial de N
+	LDR R1,=15; Valor maximo de N
+    VLDR.F32 S0,=3; Variable X de la Serie, Colocar el mismo valor del angulo
+	VLDR.F32 S23, = 0; DESFASE -3pi/2
+	VADD.F32 S0, S23,S0;
+	VLDR.F32 S1,=1; S1=2N+1
+	VLDR.F32 S3,=1; Cte	
+	VLDR.F32 S4,=1; Resultado FINAL
+	VLDR.F32 S6,=1; Contador
+	VLDR.F32 S12,=1;
+	B Cuartil
+	
+	
+Cuartil 
+	 VMUL.F32 S7,S1,S1 ; 1x1
+	 VDIV.F32 S4,S0,S7 ; X/1!
+	 VMUL.F32 S10,S0,S0 ; X^2
+	 B resta
+	 
+suma
+     ADD R0,#1;
+	 VADD.F32 S2,S1,S7 ; 
+	 VADD.F32 S8,S6,S2
+	 VMUL.F32 S9,S8,S2
+	 VMUL.F32 S12,S9
+	 VMUL.F32 S10,S0
+	 VDIV.F32 S11,S10,S12
+	 VADD.F32 S4,S4,S11
+	 VADD.F32 S1,S6
+	 VADD.F32 S7,S6
+	 VMUL.F32 S10,S0
+	 CMP R0,R1
+	 BEQ LOOP
+	 B resta
+	 
+resta
+     ADD R0,#1
+	 VADD.F32 S2,S1,S7
+	 VADD.F32 S8,S6,S2
+	 VMUL.F32 S9,S8,S2
+	 VMUL.F32 S12,S9
+	 VMUL.F32 S10,S0
+	 VDIV.F32 S11,S10,S12
+	 VSUB.F32 S4,S4,S11
+	 VADD.F32 S1,S6
+	 VADD.F32 S7,S6
+	 VMUL.F32 S10,S0
+	 CMP R0,R1
+	 BEQ LOOP
+	 B suma		
+;--------------------------Seno----------------------
+
+	
+LOOP
+
+	; este programa calcula la hipotenusa del triangulo rectangulo o
+	;calcula el 3 angulo restante del triangulo rectangulo conociendo uno y el seno del angulo conocido
+	; SI SE DESEA CALCULAR LA HIPOTENUSA EN BASE A LOS CATETOS LA RESPUESTA ESTA EN EL REGISTRO FLOTANTE S14
+	;EL Angulo restante del triangulo rectangulo se encuentra en el registro R8
+	;EL SENO DEL ANGULO INGRESADO EN EL REGISTRO R7  SE ENCUENTRA EN EL REGISTRO S4
+	;El registro s13 y s5 son los catetos del triangulo a ingresar por el usuario
+	; el registro r7 Y S0 son los registros donde se ingresa el valor del angulo por el usuario 
+	;
+	B LOOP
+	 	ALIGN
+		END

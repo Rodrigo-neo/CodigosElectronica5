@@ -1,0 +1,95 @@
+;Rodrigo Leonel Guerra Cifuentes 201404011 Electronica 5 Practica 2
+Seg EQU 20000000 ;numero al que el microporcesador debe contar para que sea equivalente a 10 seg (16000000/8)(Tiempo)
+
+;-------------------Define el uso de instrucciones THUMB-----------
+		THUMB
+;-----------Define area para datos de 4 bytes---------------
+		AREA 	DATA, ALIGN=4 
+;-----------Declarar Variables -------------------------
+;----------Define área de codigo, con capacidad de ser importado C---------
+		AREA	|.text|, CODE, READONLY, ALIGN=2
+;----------Declara la instrucción Start como Global-----------			
+		EXPORT	Start
+;----------------------Codigo------------------------------------
+
+
+Start   
+
+CLK		LDR R1, =0X400FE608 ;Activacion del clock en el puerto F y puerto C
+		LDR R0 , [R1]
+		ORR R0, #0X24 ;100100
+		STR R0, [R1]
+		NOP
+		NOP
+		NOP
+;---------DESACTIVAR FUNCIONES ANALOGICAS AMSE
+		LDR R1, =0x40025000	;DIRECCION BASE PUERTO F
+		LDR R3, =0x40006000	;DIRECCION BASE PUERTO C
+		LDR R0, [R1,#0X528]	;OFFSET REGISTRO AMSEL F
+		LDR R2, [R3,#0X528] ;OFFSET REGISTRO AMSEL C
+		BIC R0, #0XFF		;Cambia todos el registro a 0 para desactivar todas las funciones analogicas del puerto
+		BIC R2, #0X20       ;Cambia todos el registro a 0 para desactivar todas las funciones analogicas del puerto
+		STR R0, [R1,#0X528]
+		STR R2, [R3,#0X528]
+;--------ASIGNAR ENTRADAS Y SALIDAS, DIR---
+		LDR R0, [R1, #0X400]
+		LDR R2, [R3, #0X400]
+		ORR R0, #0XFF	; Asignando los pines del puerto como salida
+		ORR R2, #0X20 	; Asignando los pines del puerto como salida
+		STR R0, [R1,#0X400]
+		STR R2, [R3,#0X400]
+;-----ASIGNAR FUNCION ALTERNATIVA,PCTL (GPI0 = 0)
+		MOV R0, #0		 ; 0 EN ESTE REGISTRO REPRESENTA GPIO
+		MOV R2, #0		
+		STR R0, [R1, #0X52C]
+		STR R2, [R3, #0X52C]
+;-----DESABILITAR FUNCION ALTERNATIVA, AFSEL
+		LDR R0, [R1, #0X420]
+		LDR R2, [R3, #0X420]
+		BIC R0, #0XFF		;Cambia todo el valor del registro AFSEL al 0 para utilizar el pin como GPIO
+		BIC R2, #0X20
+		STR R0, [R1, #0X420]
+		STR R2, [R3, #0X420]
+;-------HABILITAR FUNCIONES DIGITALES, DEN
+		LDR R0, [R1, #0X51C]
+		LDR R2, [R3, #0X51C]
+		ORR R0, #0X0E		;HABILITA LOS PINES 1,2,3 puerto F (0000 1110 = 0X0E)
+		ORR R2, #0X20		;HABILITA EL PIN 5 EN EL PUERTO C  (0010 0000 = 0X20)
+		STR R0, [R1, #0X51C]
+		STR R2, [R3, #0X51C]
+;Conteo de ciclos para hacer el delay
+		LDR R5, =Seg
+		LDR R4, =0
+;-------PRENDER LEDS---------
+LOOP
+		LDR R4, =0
+		LDR R2, [R3, #0X3FC]	;OFFSET AL REGISTRO DE DATA DE TODOS LOS PINES DE UN PUERTO
+		BIC R2, #0X20			;Apaga los pines del puerto C
+		STR R2, [R3, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y Apaga los pines
+		LDR R0, [R1, #0X3FC]	;OFFSET AL REGISTRO DE DATA DE TODOS LOS PINES DE UN PUERTO
+		ORR R0, #0X2 			;ENCIENDE el pin 2  del puerto F
+		STR R0, [R1, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y ENCIENDE LOS PINES
+		B DELAY
+DELAY	
+		
+		ADD R4, #1
+		CMP R4, R5
+		BEQ LOOP2
+		B DELAY
+LOOP2
+		LDR R4, =0	;reinicio de registro que lleva el conteo de los ciclos
+		LDR R0, [R1, #0X3FC]	;OFFSET AL REGISTRO DE DATA DE TODOS LOS PINES DE UN PUERTO
+		BIC R0, #0X0E			;Apaga todos los pines del puerto F
+		STR R0, [R1, #0X3FC]	;GUARDA EL VALOR EN EL REGISTRO DE DATA Y Apaga los pines
+		LDR R2, [R3, #0X3FC]	;OFFSET AL REGISTRO DE DATA DE TODOS LOS PINES DE UN PUERTO
+		ORR R2, #0X20			;ENCIENDE el pin 5 del puerto C
+		STR R2, [R3, #0X3FC]
+		B DELAY2
+DELAY2  	
+		ADD R4, #1
+		CMP R4, R5
+		BEQ LOOP
+		B DELAY2
+		ALIGN      
+		END
+			
